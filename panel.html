@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>پنل ربات روبیکا</title>
+<style>
+  :root {
+    --bg: #f3f5f4; --card: #ffffff; --ink: #14201b; --muted: #5d6b64;
+    --line: #d9dfdc; --main: #0f7a5c; --main-ink: #ffffff; --warn: #b3261e; --ok: #0f7a5c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #101614; --card: #18211e; --ink: #e8efec; --muted: #9aaba3; --line: #2b3833; --main: #2bb58d; --main-ink: #06241a; --warn: #ff8a80; --ok: #2bb58d; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: Vazirmatn, Tahoma, "Segoe UI", sans-serif; line-height: 1.8; }
+  main { max-width: 640px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 1.3rem; margin: 8px 0 4px; }
+  h2 { font-size: 1.05rem; margin: 0 0 12px; }
+  .sub { color: var(--muted); font-size: .9rem; margin-bottom: 16px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 14px; }
+  label { display: block; font-size: .9rem; margin: 12px 0 4px; }
+  input, textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--ink); font: inherit; }
+  input[dir=ltr] { text-align: left; }
+  textarea { min-height: 96px; resize: vertical; }
+  input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid var(--main); outline-offset: 2px; }
+  .hint { color: var(--muted); font-size: .82rem; margin-top: 3px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  button { font: inherit; padding: 10px 16px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+  button.main { background: var(--main); color: var(--main-ink); border-color: var(--main); font-weight: 700; }
+  button.stop { border-color: var(--warn); color: var(--warn); }
+  .stats { display: flex; gap: 20px; flex-wrap: wrap; }
+  .stats b { font-size: 1.3rem; display: block; }
+  .state { font-weight: 700; }
+  .on { color: var(--ok); } .off { color: var(--warn); }
+  pre { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; overflow: auto; direction: ltr; text-align: left; font-size: .8rem; white-space: pre-wrap; word-break: break-all; margin: 10px 0 0; }
+  #login { max-width: 360px; margin: 18vh auto 0; }
+  footer { text-align: center; color: var(--muted); font-size: .85rem; padding: 16px 0 28px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+
+<div id="login" hidden>
+  <section>
+    <h2>ورود به پنل</h2>
+    <label for="pass">رمز پنل</label>
+    <input id="pass" type="password" dir="ltr" autocomplete="current-password">
+    <div class="hint">رمز موقع اجرای سرور داخل ترمینال چاپ میشه.</div>
+    <div class="row"><button class="main" id="loginBtn">ورود</button></div>
+    <div id="loginErr" class="hint" style="color:var(--warn)"></div>
+  </section>
+</div>
+
+<div id="app" hidden>
+  <h1>پنل ربات روبیکا</h1>
+  <div class="sub">جوین اجباری کانال و ارسال متن به کاربر</div>
+
+  <section>
+    <div class="stats">
+      <div><b id="sState" class="state off">خاموش</b>وضعیت ربات</div>
+      <div><b id="sUsers">0</b>کاربر</div>
+      <div><b id="sDel">0</b>متن ارسال‌شده</div>
+    </div>
+    <pre id="sErr" hidden></pre>
+    <div class="row">
+      <button class="main" id="startBtn">روشن کردن ربات</button>
+      <button class="stop" id="stopBtn">خاموش کردن</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>اتصال ربات</h2>
+    <label for="token">توکن ربات</label>
+    <input id="token" dir="ltr" placeholder="توکن رو از BotFather روبیکا بگیر">
+    <div class="row"><button id="testToken">تست توکن</button></div>
+  </section>
+
+  <section>
+    <h2>کانال جوین اجباری</h2>
+    <label for="channelGuid">شناسه کانال (GUID)</label>
+    <input id="channelGuid" dir="ltr" placeholder="c0...">
+    <div class="hint">ربات باید داخل کانال ادمین باشه. اگه خالی بذاری جوین اجباری غیرفعاله و متن مستقیم داده میشه.</div>
+    <label for="channelLink">لینک کانال</label>
+    <input id="channelLink" dir="ltr" placeholder="https://rubika.ir/...">
+    <label for="testUser">تست عضویت: شناسه کاربر (GUID)</label>
+    <input id="testUser" dir="ltr" placeholder="b0...">
+    <div class="row"><button id="testMember">تست عضویت این کاربر</button></div>
+    <pre id="testOut" hidden></pre>
+  </section>
+
+  <section>
+    <h2>متن‌ها</h2>
+    <label for="startMsg">پیام خوش‌آمد</label>
+    <textarea id="startMsg"></textarea>
+    <label for="joinMsg">پیام درخواست عضویت</label>
+    <textarea id="joinMsg"></textarea>
+    <label for="notJoinedMsg">پیام وقتی هنوز عضو نشده</label>
+    <textarea id="notJoinedMsg"></textarea>
+    <label for="btnText">متن دکمه بررسی عضویت</label>
+    <input id="btnText">
+    <label for="content">متنی که بعد از عضویت داده میشه</label>
+    <textarea id="content" style="min-height:160px"></textarea>
+  </section>
+
+  <div class="row" style="margin-top:0"><button class="main" id="saveBtn">ذخیره تنظیمات</button><span id="saved" class="hint" style="align-self:center"></span></div>
+</div>
+
+<footer>سازنده: محمد متین ارامتن</footer>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const FIELDS = ['token','channelGuid','channelLink','startMsg','joinMsg','notJoinedMsg','content','btnText'];
+let pass = sessionStorage.getItem('pass') || '';
+
+async function call(path, method, body) {
+  const r = await fetch(path, {
+    method: method || 'GET',
+    headers: { 'Content-Type': 'application/json', 'x-pass': pass },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (r.status === 401) { showLogin('رمز اشتباهه'); throw new Error('401'); }
+  return r.json();
+}
+function showLogin(msg) { $('app').hidden = true; $('login').hidden = false; $('loginErr').textContent = msg || ''; }
+
+function paint(d) {
+  FIELDS.forEach((k) => { if (document.activeElement !== $(k)) $(k).value = d.cfg[k] || ''; });
+  $('sState').textContent = d.cfg.running ? 'روشن' : 'خاموش';
+  $('sState').className = 'state ' + (d.cfg.running ? 'on' : 'off');
+  $('sUsers').textContent = d.users;
+  $('sDel').textContent = d.delivered;
+  $('sErr').hidden = !d.lastError;
+  $('sErr').textContent = d.lastError ? 'آخرین خطا: ' + d.lastError : '';
+}
+async function load() {
+  const d = await call('/api/config');
+  $('login').hidden = true; $('app').hidden = false;
+  paint(d);
+}
+function collect(extra) {
+  const o = {}; FIELDS.forEach((k) => (o[k] = $(k).value)); return Object.assign(o, extra || {});
+}
+async function save(extra) {
+  await call('/api/config', 'POST', collect(extra));
+  $('saved').textContent = 'ذخیره شد';
+  setTimeout(() => ($('saved').textContent = ''), 2000);
+  await load();
+}
+
+$('loginBtn').onclick = async () => {
+  pass = $('pass').value; sessionStorage.setItem('pass', pass);
+  try { await load(); } catch {}
+};
+$('pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('loginBtn').click(); });
+$('saveBtn').onclick = () => save();
+$('startBtn').onclick = () => save({ running: true });
+$('stopBtn').onclick = () => save({ running: false });
+$('testToken').onclick = async () => {
+  const r = await call('/api/test-token', 'POST', { token: $('token').value });
+  $('testOut').hidden = false; $('testOut').textContent = JSON.stringify(r, null, 2);
+};
+$('testMember').onclick = async () => {
+  await save();
+  const r = await call('/api/test-member', 'POST', { userId: $('testUser').value });
+  $('testOut').hidden = false; $('testOut').textContent = JSON.stringify(r, null, 2);
+};
+
+if (pass) load().catch(() => showLogin()); else showLogin();
+setInterval(() => { if (!$('app').hidden) call('/api/config').then(paint).catch(() => {}); }, 5000);
+</script>
+</body>
+</html>
